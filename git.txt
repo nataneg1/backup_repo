@@ -1,0 +1,8 @@
+Once Done Editing a File and Ready to Upload to GitHub:
+
+git commit filename.py -m 'what did you do here'
+git status
+git push
+
+Start Env:
+.\env\Scripts\activate
