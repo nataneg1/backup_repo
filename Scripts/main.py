@@ -2,7 +2,8 @@ import requests
 import json
 from tabulate import tabulate
 import csv
-import openpyxl
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
 
 ratios = {'date':'Date', 'symbol':'Ticker', 'grossProfitMargin':'Gross Profit Margin', 'returnOnEquity':'Return on Equity', 'currentRatio':'Current Ratio', 'quickRatio':'Quick Ratio', 'debtEquityRatio':'Debt-Equity Ratio', 'debtRatio':'Debt Ratio', 'priceEarningsRatio':'P/E', 'priceToBookRatio':'P/B'}
 income = {'date':'Date', 'period':'Period', 'symbol':'Ticker', 'revenue':'Revenue', 'grossProfit':'Gross Profit', 'operatingIncome':'Operating Income', 'netIncome':'Net Income'}
@@ -59,7 +60,6 @@ def sortMe(dataList, sortOption):
 def show(showOption, limit, tickers, quarterly, sortOption):
     #this list will be filled with the headers of the correct financial statement
     headers = []
-    limit = int(limit)
     
     #determine which statement to view
     dic = ratios
@@ -94,12 +94,16 @@ def show(showOption, limit, tickers, quarterly, sortOption):
         print('\n')
         data.clear()
             
-def create(createOption, tickers, quarterly, sortOption, fileName):
+def create(createOption, limit, tickers, quarterly, sortOption, fileName):
     #this list will be filled with the headers of the correct financial statement
     headers = []
-    #limiting spreadsheet creation to 1
-    limit = 1
-    
+
+    #Createing New Workbook
+    wb = Workbook()
+    dest_filename = fileName
+    ws1 = wb.active
+    ws1.title = "Sheet1"
+    workSheetList = ['WorkSheet1', 'WorkSheet2', 'WorkSheet3', 'WorkSheet4', 'WorkSheet5']
     #determine which statement to view
     dic = ratios
     if(createOption == '2'):
@@ -113,7 +117,14 @@ def create(createOption, tickers, quarterly, sortOption, fileName):
     for key, value in dic.items():
         headers.append(value)
     
-    for i in range(limit):
+    for i in range(limit):   
+        #Creating Repective Worksheets     
+        if(i != 0):
+            ws = wb.create_sheet(title=workSheetList[i])
+        else:
+            ws = wb.active
+            ws.title = workSheetList[i]
+        #At this point, the current worksheet can be reffered to as ws
         data = []
         for ticker in tickers:
             dataList = []
@@ -129,18 +140,16 @@ def create(createOption, tickers, quarterly, sortOption, fileName):
                 dataList.append(searchFile[key])
             data.append(dataList)
         newData = sortMe(data, int(sortOption))
-        writer(headers, newData, fileName)
+        writeToSheet(headers, newData, wb, ws)
         print('\n')
         data.clear()
+    #Save workbook in file
+    wb.save(filename = dest_filename)
 
 
-def writer(headers, data, fileName):
-    with open (fileName, "w", newline = "") as csvfile:
-        sheet = csv.writer(csvfile)
-        sheet.writerow(headers)
-        for x in data:
-            sheet.writerow(x)
-    print("File Successfully Created")
+def writeToSheet(headers, data, workBook, workSheet):
+    workSheet.append(headers)
+    print("Sheet Successfully Created")
 
 
 #function needs it extract data from a list of json files for the given years and print them out in tabular form
@@ -344,16 +353,20 @@ while not exit:
         if(not isinstance(quarterly, bool)):
             continue
 
+        yearDec = int(printShowYears())
+        if(not checkNum(yearDec, 5)):
+            continue
+
         fileName = printFileName()
-        fileName = fileName + ".csv"
+        fileName = fileName + ".xlsx"
 
         sort = printSort(createDecision)
         if(isinstance(sort, bool)):
             print('\n')
-            create(createDecision, tickers, quarterly, 0, fileName)
+            create(createDecision, yearDec, tickers, quarterly, 0, fileName)
         else:
             print('\n')
-            create(createDecision, tickers, quarterly, sort, fileName)
+            create(createDecision, yearDec, tickers, quarterly, sort, fileName)
 
     elif(action == '3'):
         print("IN IDK YET")
