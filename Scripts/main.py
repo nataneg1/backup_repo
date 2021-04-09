@@ -102,7 +102,6 @@ def create(createOption, limit, tickers, quarterly, sortOption, fileName):
     wb = Workbook()
     dest_filename = fileName
     ws1 = wb.active
-    ws1.title = "Sheet1"
     workSheetList = ['WorkSheet1', 'WorkSheet2', 'WorkSheet3', 'WorkSheet4', 'WorkSheet5']
     #determine which statement to view
     dic = ratios
@@ -149,6 +148,9 @@ def create(createOption, limit, tickers, quarterly, sortOption, fileName):
 
 def writeToSheet(headers, data, workBook, workSheet):
     workSheet.append(headers)
+    #Data is a list of lists, so info is a single list
+    for info in data:
+        workSheet.append(info)
     print("Sheet Successfully Created")
 
 
@@ -213,7 +215,7 @@ def printMenu():
     print("------- Actions -------")
     print("1. Show")
     print("2. Create")
-    print("3. IDK Yet")
+    print("3. Update")
     print("4. Help")
     print("5. Exit")
     print('\n')
@@ -371,7 +373,20 @@ while not exit:
     elif(action == '3'):
         print("IN IDK YET")
     elif(action == '4'):
-        print("IN HELP")
+        print("------- Help Menu -------")
+        print("1. Show")
+        print("     The show function will print a table containing all of the data you choose to see in the terminal")
+        print("     It can show an unlimited amount of tickers, can show quarterly or yearly results, show up to 5 quarters/years at once, and sort by any value")
+        print("2. Create")
+        print("     The create function will create a new excel sheet based off of the data inputed")
+        print("     Each year/quarter will be shown in a different sheet in the workbook")
+        print("3. Update")
+        print("     The update function has multiple options. It can go through an existing excel sheet created by this program and ")
+        print("     update all of the numbers to the most result quarterly/yearly results.")
+        print("     The second function is adding a new equity to the bottom of the list for up to 5 years")
+        print("4. Help")
+        print("5. Exit")
+        print('\n')
     elif(action == '5'):
         print("Exiting Program...")
         exit = True
