@@ -50,11 +50,6 @@ def sortMe(dataList, sortOption):
 
     return newDataList
 
-#Variables:
-#Financial Sheet <-- Covered By Show
-#Number of Tickers
-#Number of years
-#Quarterly or Yearly <-- Covered By Show
 
 #   Statement Choice, years viewed limit, list of tickers, bool of whether to see it quarterly or not, sort by num
 def show(showOption, limit, tickers, quarterly, sortOption):
@@ -144,6 +139,23 @@ def create(createOption, limit, tickers, quarterly, sortOption, fileName):
         data.clear()
     #Save workbook in file
     wb.save(filename = dest_filename)
+
+#Update Function
+# 1. Update Current Equities to MV
+# 2. Add new equity to bottom of list
+
+# 1.
+# Go through specified sheet name using /get_sheet_by_name("SheetName") or use .get_active_sheet()
+# Collect ticker names from this sheet
+# Clear Sheet
+# Call API for every ticker and insert values as usual
+
+#2.
+# Using the following to find the current sheets:
+# print(wb2.sheetnames)
+#['Sheet2', 'New Title', 'Sheet1']
+# Based on years, append to that many sheets
+# Use append function to bottom of sheet for each equity
 
 
 def writeToSheet(headers, data, workBook, workSheet):
@@ -323,6 +335,7 @@ while not exit:
         yearDec = printShowYears()
         if(not checkNum(yearDec, 5)):
             continue
+        yearDec = int(yearDec)
 
         quarterly = printYearlyOrQuarterly()
         if(not isinstance(quarterly, bool)):
