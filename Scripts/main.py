@@ -4,6 +4,7 @@ from tabulate import tabulate
 import csv
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
+from openpyxl import load_workbook
 
 ratios = {'date':'Date', 'symbol':'Ticker', 'grossProfitMargin':'Gross Profit Margin', 'returnOnEquity':'Return on Equity', 'currentRatio':'Current Ratio', 'quickRatio':'Quick Ratio', 'debtEquityRatio':'Debt-Equity Ratio', 'debtRatio':'Debt Ratio', 'priceEarningsRatio':'P/E', 'priceToBookRatio':'P/B'}
 income = {'date':'Date', 'period':'Period', 'symbol':'Ticker', 'revenue':'Revenue', 'grossProfit':'Gross Profit', 'operatingIncome':'Operating Income', 'netIncome':'Net Income'}
@@ -93,7 +94,7 @@ def create(createOption, limit, tickers, quarterly, sortOption, fileName):
     #this list will be filled with the headers of the correct financial statement
     headers = []
 
-    #Createing New Workbook
+    #Creating New Workbook
     wb = Workbook()
     dest_filename = fileName
     ws1 = wb.active
@@ -146,9 +147,13 @@ def create(createOption, limit, tickers, quarterly, sortOption, fileName):
 
 # 1.
 # Go through specified sheet name using /get_sheet_by_name("SheetName") or use .get_active_sheet()
+# Ask which sheet, sheets, or all sheets
+# Ask Quarterly or Yearly
+# Ask to sort
 # Collect ticker names from this sheet
+# Collect dates from sheet
 # Clear Sheet
-# Call API for every ticker and insert values as usual
+# Call API for every ticker and search for the specific date and insert values as usual
 
 #2.
 # Using the following to find the current sheets:
@@ -290,6 +295,33 @@ def printSort(showOption):
         temp2 = input("Which value would you like to sort by?")
         return temp2
 
+def printUpdateOptions():
+    print("------- Options -------")
+    print("1. Update existing Spreadsheet/s too current market value")
+    print("2. Add a new ticker to existing spreadsheet/s")
+    print('\n')
+    temp = input("Please input the action you would like to do: ")
+    return temp
+
+def printWhichSheets(wb):
+    print("------- Options -------")
+    print("1. Enter which sheet or sheets you'd like to update")
+    print("2. Update all sheets in workbook")
+    print("\n")
+
+    temp = input("Please input the action you would like to do: ")
+    
+    if(temp == '1'):
+        sheetNames = input('Please enter the name of the sheet/s')
+        sheetNames = sheetNames.replace(' ', '')
+        sheetNames = sheetNames.split(',')
+        return sheetNames
+    elif(temp == '2'):
+        return wb.sheetnames
+    else:
+        print('Invalid Input')
+        return -1
+
 #helper function for printSort
 def printSortOptions(skipVal, dic): #skipValue is the index at which afterwards the function should start giving sort options
     i = 1
@@ -324,23 +356,24 @@ while not exit:
         continue
     # ========== Show ==========
     if(action == '1'):
+        #Asks for tickers from user
         tickers = printShowTicker()
         if(not checkTicker(tickers)):
             continue
-
+        #Asks for which financial document user wants
         showDecision = printShowOptions()
         if(not checkNum(showDecision, 4)):
             continue
-
+        #How many years or Quarters
         yearDec = printShowYears()
         if(not checkNum(yearDec, 5)):
             continue
         yearDec = int(yearDec)
-
+        #Asks if user wants quarterly or yearly numbers
         quarterly = printYearlyOrQuarterly()
         if(not isinstance(quarterly, bool)):
             continue
-        
+        #Ask User if they want to sort
         sort = printSort(showDecision)
         if(isinstance(sort, bool)):
             print('\n')
@@ -356,25 +389,29 @@ while not exit:
     # ========== Create ==========
     elif(action == '2'):
         
+        #Asks for tickers from user
         tickers = printShowTicker()
         if(not checkTicker(tickers)):
             continue
-
+        #Asks for which financial document user wants
         createDecision = printShowOptions()
         if(not checkNum(createDecision, 4)):
             continue
-
+        #Asks if user wants quarterly or yearly numbers
         quarterly = printYearlyOrQuarterly()
         if(not isinstance(quarterly, bool)):
             continue
-
+        #How many years or Quarters
         yearDec = int(printShowYears())
         if(not checkNum(yearDec, 5)):
             continue
-
+        #What is the file name called
         fileName = printFileName()
-        fileName = fileName + ".xlsx"
-
+        if(fileName.find('.xlsx') != -1):
+            continue
+        else:
+            fileName = fileName + ".xlsx"
+        #Ask User if they want to sort
         sort = printSort(createDecision)
         if(isinstance(sort, bool)):
             print('\n')
@@ -382,9 +419,42 @@ while not exit:
         else:
             print('\n')
             create(createDecision, yearDec, tickers, quarterly, sort, fileName)
-
+    # ========== Update ==========
     elif(action == '3'):
-        print("IN IDK YET")
+        #Asks user for what update function they want to use
+        updateDecision = printUpdateOptions()
+        if(not checkNum(updateDecision, 4)):
+            continue
+
+        #Asks for which financial document user wants
+        docDecision = printShowOptions()
+        if(not checkNum(docDecision, 4)):
+            continue
+
+        #Ask for the name of the workbook
+        workbookName = input('What is the name of the workbook? ')
+        if(workbookName.find('.xlsx') != -1):
+            print('')
+        else:
+            workbookName = workbookName + ".xlsx"
+        #Check to see if filename is valid
+        try:
+            wb = load_workbook(filename = workbookName)
+        except (FileNotFoundError, PermissionError) as e:
+            print('File Not Found or selected sheet is still open')
+            continue
+        
+        listOfSheets = printWhichSheets(wb)
+        if(listOfSheets == '1'):
+            continue
+
+        #Ask User if they want to sort
+        sort = printSort(docDecision)
+        if(isinstance(sort, bool)):
+            print('\n')
+        else:
+            print('\n')  
+
     elif(action == '4'):
         print("------- Help Menu -------")
         print("1. Show")
