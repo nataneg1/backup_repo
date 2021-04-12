@@ -2,9 +2,13 @@ import requests
 import json
 from tabulate import tabulate
 import csv
-from openpyxl import Workbook
-from openpyxl.utils import get_column_letter
+import openpyxl
 from openpyxl import load_workbook
+
+# from openpyxl import Workbook
+# from openpyxl.utils import get_column_letter
+# from openpyxl import get_highest_row
+# from openpyxl import load_workbook
 
 ratios = {'date':'Date', 'symbol':'Ticker', 'grossProfitMargin':'Gross Profit Margin', 'returnOnEquity':'Return on Equity', 'currentRatio':'Current Ratio', 'quickRatio':'Quick Ratio', 'debtEquityRatio':'Debt-Equity Ratio', 'debtRatio':'Debt Ratio', 'priceEarningsRatio':'P/E', 'priceToBookRatio':'P/B'}
 income = {'date':'Date', 'period':'Period', 'symbol':'Ticker', 'revenue':'Revenue', 'grossProfit':'Gross Profit', 'operatingIncome':'Operating Income', 'netIncome':'Net Income'}
@@ -148,12 +152,78 @@ def create(createOption, limit, tickers, quarterly, sortOption, fileName):
 # 1.
 # Go through specified sheet name using /get_sheet_by_name("SheetName") or use .get_active_sheet()
 # Ask which sheet, sheets, or all sheets
+# Which financial sheet
 # Ask Quarterly or Yearly
 # Ask to sort
 # Collect ticker names from this sheet
 # Collect dates from sheet
 # Clear Sheet
 # Call API for every ticker and search for the specific date and insert values as usual
+
+# docDecision: Which finacial statemet to use, wb: workBook, sortOption, which data point to sort by
+def updateEquities(docDecision, wb, sheetNames, sortOption):
+    findTickers(wb, sheetNames)
+
+    # #this list will be filled with the headers of the correct financial statement
+    # headers = []
+    
+    # #determine which statement to view
+    # dic = ratios
+    # if(docDecision == '2'):
+    #     dic = balance
+    # elif(docDecision == '3'):
+    #     dic = income
+    # elif(docDecision == '4'):
+    #     dic = cashflows
+
+    # #load header list
+    # for key, value in dic.items():
+    #     headers.append(value)
+    
+    # for i in range(limit):
+    #     data = []
+    #     for ticker in tickers:
+    #         dataList = []
+    #         dataList.clear()
+    #         file = getInfo(docDecision, ticker, quarterly)
+    #         #if there arent enough finincial statements, return
+    #         if(limit > len(file)):
+    #             print('Ticker ' + ticker.upper() +  'only has ' + str(len(file)) + ' year/quarters of financial statements')
+    #             return
+    #         searchFile = file[i]
+            
+    #         for key, value in dic.items():
+    #             dataList.append(searchFile[key])
+    #         data.append(dataList)
+    #     newData = sortMe(data, int(sortOption))
+    #     print(tabulate(newData, headers))
+    #     print('\n')
+    #     data.clear()
+
+def findTickers(wb, sheetNames):
+    tickers = []
+    currentSheet = wb[sheetNames[0]]
+    maxRow = 1
+    #Finding the highest row
+    while(currentSheet['B' + str(maxRow)].value is not None):
+        maxRow += 1
+        if(maxRow > 50):
+            break
+    #appending tickers from xlsx file to tickers list
+    for i in range(2, maxRow):
+        tickers.append(currentSheet['B' + str(i)].value)
+
+    #checkTicker returns a list of tickers that didn't work
+    badTickers = checkTicker(tickers, True)
+    #If there are bad tickers, remove them from the tickers list and inform the user
+    if(len(badTickers) > 0):
+        for badTicker in badTickers:
+            print(badTicker + ' will not be updated')
+            tickers.remove(badTicker)
+    print(tickers)
+    return tickers, badTickers
+        
+
 
 #2.
 # Using the following to find the current sheets:
@@ -194,8 +264,9 @@ def getInfo(showOption, ticker, quarterly):
 
 
 #makes sure ticker given is valid
-def checkTicker(tickers):
-
+#singleTicker: if true, returns a list of the invalid tickers
+def checkTicker(tickers, singleTicker):
+    badTickers = [] #only used if singleTicker is ture
     for ticker in tickers:
         passed = False
         ticker = ticker.upper()
@@ -209,9 +280,12 @@ def checkTicker(tickers):
                 break
         
         if(passed == False):
+            badTickers.append(ticker)
             print('Ticker ' + ticker +  ' is invalid, doesn\'t have financial statements, or is an OTC or ETF')
-            return False
-        
+    if(singleTicker):
+        return badTickers
+    elif(len(badTicker) > 0):
+        return False
     return True
 
 #makes sure input is an int and is within desired range
@@ -358,7 +432,7 @@ while not exit:
     if(action == '1'):
         #Asks for tickers from user
         tickers = printShowTicker()
-        if(not checkTicker(tickers)):
+        if(not checkTicker(tickers, False)):
             continue
         #Asks for which financial document user wants
         showDecision = printShowOptions()
@@ -391,7 +465,7 @@ while not exit:
         
         #Asks for tickers from user
         tickers = printShowTicker()
-        if(not checkTicker(tickers)):
+        if(not checkTicker(tickers, False)):
             continue
         #Asks for which financial document user wants
         createDecision = printShowOptions()
@@ -423,7 +497,7 @@ while not exit:
     elif(action == '3'):
         #Asks user for what update function they want to use
         updateDecision = printUpdateOptions()
-        if(not checkNum(updateDecision, 4)):
+        if(not checkNum(updateDecision, 2)):
             continue
 
         #Asks for which financial document user wants
@@ -445,15 +519,18 @@ while not exit:
             continue
         
         listOfSheets = printWhichSheets(wb)
-        if(listOfSheets == '1'):
+        if(listOfSheets == -1):
             continue
 
         #Ask User if they want to sort
         sort = printSort(docDecision)
         if(isinstance(sort, bool)):
-            print('\n')
+            sort = 0
+        
+        if(updateDecision == '1'):
+            updateEquities(docDecision, wb, listOfSheets, sort)
         else:
-            print('\n')  
+            print(updateDecision)
 
     elif(action == '4'):
         print("------- Help Menu -------")
